@@ -10,6 +10,7 @@
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/css/materialize.min.css">
 	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<script src="regression.js"></script>
 
 	<style>
 		svg {
@@ -119,6 +120,41 @@
 			.attr("x", -10)
 			.attr("transform", "rotate(0)")
 			.style("text-anchor", "end")
+
+
+		function get_series(data, axis, key){
+			r_array = [];
+			for(var idx=0; idx<data.length; idx++){
+				var data_at_idx = data[idx];
+				if(data_at_idx[2] == key){
+					if(axis == "x"){
+						r_array.push(x_scale(format.parse(data_at_idx[0])));
+					} else {
+						r_array.push(data_at_idx[1]);
+					}
+				}
+			}
+			return r_array;
+		}
+
+		function get_array_for_reg(xa, ya){
+			r_array = [];
+			for(var idx = 0; idx < xa.length; idx++){
+				r_array.push([xa[idx], NaN]);
+			}
+			for(var idx = 0; idx < ya.length; idx++){
+				r_array[idx][1] = ya[idx];
+			}
+			return r_array;
+		}
+
+		var kx_series = get_series(data_set, "x", "k");
+		var ky_series = get_series(data_set, "y", "k");
+		var karr_reg = get_array_for_reg(kx_series, ky_series);
+		var k_reg = regression('linear', karr_reg);
+		// linear, logarithmic
+
+		console.log(k_reg)
 
 	</script>
 
