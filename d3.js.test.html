@@ -63,12 +63,8 @@
 			.data(data_set)
 			.enter()
 			.append("circle")
-			.style("fill", function(d, i){
-				if(d[2] == "k"){
-					return "orange";
-				} else {
-					return "blue";
-				}		
+			.attr("class", function(d, i){
+				return d[2]+"-tweet"
 			})
 			.attr("cx", function(d, i){
 				return x_scale(format.parse(d[0]));
