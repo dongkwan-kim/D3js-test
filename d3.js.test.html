@@ -6,7 +6,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	
 	<title>D3.js test</title>
-
+	<script src="http://code.jquery.com/jquery.js"></script>
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/css/materialize.min.css">
 	<script src="http://d3js.org/d3.v3.min.js"></script>
@@ -17,6 +17,15 @@
 			height: 400px;
 			border: 1px solid grey;
 		}
+
+		.k-tweet {
+			fill: orange;
+		}
+
+		.t-tweet {
+			fill: blue;
+		}
+
 	</style>
 
 </head>
@@ -31,7 +40,46 @@
 	</div>
 
 	<script>
-	
+		var svg_width = 400;
+		var svg_height = 400;
+		var offset_x = 10;
+		var offset_y =10;
+
+		var data_set = [
+			["2014-03-29", 0, "k"], ["2016-07-17", 7895, "k"], ["2016-08-02", 8166, "k"],
+			["2015-08-23", 0, "t"], ["2016-07-17", 5012, "t"], ["2016-08-02", 5514, "t"],
+		];
+
+		var format = d3.time.format("%Y-%m-%d"),
+			min_date = format.parse("2014-01-01"),
+			max_date = format.parse("2017-12-31");
+
+		var x_scale = d3.time.scale()
+			.domain([min_date, max_date])
+			.range([0, svg_width]);
+
+		d3.select("#my-graph")
+			.selectAll("circle")
+			.data(data_set)
+			.enter()
+			.append("circle")
+			.style("fill", function(d, i){
+				if(d[2] == "k"){
+					return "orange";
+				} else {
+					return "blue";
+				}		
+			})
+			.attr("cx", function(d, i){
+				return x_scale(format.parse(d[0]));
+			})
+			.attr("cy", function(d, i){
+				return (svg_height - d[1]/50) - offset_y;
+			})
+			.attr("r", 3)
+
+
+
 	</script>
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/js/materialize.min.js"></script>
