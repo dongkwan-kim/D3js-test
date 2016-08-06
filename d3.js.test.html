@@ -18,10 +18,19 @@
 			border: 1px solid grey;
 		}
 
+		.axis text {
+			font-size: 11px;
+		}
+
+		.axis path,
+		.axis line {
+			fill: none;
+			stroke: black;
+		}
+
 		.k-tweet {
 			fill: orange;
 		}
-
 		.t-tweet {
 			fill: blue;
 		}
@@ -33,7 +42,7 @@
 <body>
 	<div class="container center">
 		<div class="row">
-			<h3>@K와 @T의 # of tweets Plot</h3>
+			<h4>@K와 @T의 # of tweets Plot</h4>
 		</div>
 		<svg id="my-graph"></svg>
 
@@ -42,8 +51,8 @@
 	<script>
 		var svg_width = 400;
 		var svg_height = 400;
-		var offset_x = 10;
-		var offset_y =10;
+		var offset_x = 40;
+		var offset_y =40;
 
 		var data_set = [
 			["2014-03-29", 0, "k"], ["2016-07-17", 7895, "k"], ["2016-08-02", 8166, "k"],
@@ -58,6 +67,10 @@
 			.domain([min_date, max_date])
 			.range([0, svg_width]);
 
+		var y_scale = d3.scale.linear()
+			.domain([0, 10000])
+			.range([400, 0])
+
 		d3.select("#my-graph")
 			.selectAll("circle")
 			.data(data_set)
@@ -67,14 +80,45 @@
 				return d[2]+"-tweet"
 			})
 			.attr("cx", function(d, i){
-				return x_scale(format.parse(d[0]));
+				return x_scale(format.parse(d[0])) + offset_x;
 			})
 			.attr("cy", function(d, i){
 				return (svg_height - d[1]/50) - offset_y;
 			})
 			.attr("r", 3)
 
+		d3.select("#my-graph")
+			.append("g")
+				.attr("class", "x axis")
+				.attr("transform", "translate(40, 360)")
+				.call(d3.svg.axis()
+					.scale(x_scale)
+					.orient("bottom")
+				)
+			.append("g")
+				.attr("class", "y axis")
+				.attr("transform", "translate(0, -400)")
+				.call(d3.svg.axis()
+					.scale(y_scale)
+					.orient("left")
+				)
 
+		d3.select("#my-graph")
+			.select(".x.axis")
+			.selectAll("text")
+			.attr("y", 0)
+			.attr("x", 9)
+			.attr("dy", ".35em")
+			.attr("transform", "rotate(40)")
+			.style("text-anchor", "start")
+
+		d3.select("#my-graph")
+			.select(".y.axis")
+			.selectAll("text")
+			.attr("y", 0)
+			.attr("x", -10)
+			.attr("transform", "rotate(0)")
+			.style("text-anchor", "end")
 
 	</script>
 
