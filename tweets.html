@@ -1,0 +1,290 @@
+
+<!DOCTYPE html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<title>@K와 @T의 # of tweets Plot</title>
+	<script src="http://code.jquery.com/jquery.js"></script>
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/css/materialize.min.css">
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<script src="regression.js"></script>
+
+	<style>
+		svg {
+			width: 550px;
+			height: 300px;
+			//border: 1px solid grey;
+		}
+
+		.axis text {
+			font-size: 11px;
+		}
+
+		.text-label {
+			font-size: 11px;
+		}
+
+		.axis path,
+		.axis line {
+			fill: none;
+			stroke: black;
+		}
+
+		.k-tweet {
+			fill: rgb(255, 193, 7);
+		}
+		.t-tweet {
+			fill: rgb(33, 150, 243);
+		}
+
+		.line {
+			fill: none;
+			stroke: grey;
+		}
+
+		blockquote {
+			border-left: 5px solid #4caf50;
+		}
+
+		.centered {
+			margin-bottom: 10px;
+		}
+
+	</style>
+
+</head>
+
+<body>
+	<div class="container">
+		<div class="row center">
+			<h4><span class="blue-text">@T</span>와 <span class="amber-text">@K</span>의 # of tweets Plot</h4>
+		</div>
+
+		<div class="row center">
+			<svg id="my-graph" class="z-depth-1"></svg>
+		</div>
+
+		<div class="row">
+			<div class="col l8 offset-l2 m8 offset-m2 s12">
+				<blockquote>
+					<p><b class="green-text">#T > #K</b>가 되려면 총 <b id="remain-day" class="green-text"></b>이 남았습니다</p>
+				</blockquote>
+				<table class="centered bordered highlight">
+					<tbody>
+						<tr>
+							<td>예상 날짜</td>
+							<td id="expect-date"></td>
+						</tr>
+						<tr>
+							<td>예상 트윗수</td>
+							<td id="expect-tweets">0</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		var svg_width = 500;
+		var svg_height = 300;
+		var offset_x = 40;
+		var offset_y = 40;
+		var y_ratio = 50;
+
+		//8166
+		var data_set = [
+			["2014-03-29", 0, "k"], ["2016-07-17", 7895, "k"], ["2016-08-02", 8166, "k"], ["2016-08-07", 8251, "k"],
+			["2015-08-23", 0, "t"], ["2016-07-17", 5012, "t"], ["2016-08-02", 5514, "t"], ["2016-08-07", 5696, "t"],
+		];
+
+		var format = d3.time.format("%Y-%m-%d"),
+			min_date = format.parse("2014-01-01"),
+			max_date = format.parse("2017-12-31");
+
+		var x_scale = d3.time.scale()
+			.domain([min_date, max_date])
+			.range([0, svg_width]);
+
+		var rev_x_scale = function(x){
+			return new Date(d3.time.scale()
+						.domain([0, svg_width])
+						.range([min_date, max_date])(x));
+		};
+
+		var y_scale = d3.scale.linear()
+			.domain([0, svg_height*y_ratio])
+			.range([svg_height, 0])
+
+		d3.select("#my-graph")
+			.selectAll("circle")
+			.data(data_set)
+			.enter()
+			.append("circle")
+			.attr("class", function(d, i){
+				return d[2]+"-tweet"
+			})
+			.attr("cx", function(d, i){
+				return x_scale(format.parse(d[0])) + offset_x;
+			})
+			.attr("cy", function(d, i){
+				return (svg_height - d[1]/y_ratio) - offset_y;
+			})
+			.attr("r", 3)
+
+		d3.select("#my-graph")
+			.append("g")
+				.attr("class", "x axis")
+				.attr("transform", "translate(40, 260)")
+				.call(d3.svg.axis()
+					.scale(x_scale)
+					.orient("bottom")
+				)
+			.append("g")
+				.attr("class", "y axis")
+				.attr("transform", "translate(0, -300)")
+				.call(d3.svg.axis()
+					.scale(y_scale)
+					.orient("left")
+				)
+
+		d3.select("#my-graph")
+			.select(".x.axis")
+			.selectAll("text")
+			.attr("y", 0)
+			.attr("x", 9)
+			.attr("dy", ".35em")
+			.attr("transform", "rotate(40)")
+			.style("text-anchor", "start")
+
+		d3.select("#my-graph")
+			.select(".y.axis")
+			.selectAll("text")
+			.attr("y", 0)
+			.attr("x", -7)
+			.attr("transform", "rotate(0)")
+			.style("text-anchor", "end")
+
+
+		function get_series(data, axis, key){
+			r_array = [];
+			for(var idx=0; idx<data.length; idx++){
+				var data_at_idx = data[idx];
+				if(data_at_idx[2] == key){
+					if(axis == "x"){
+						r_array.push(x_scale(format.parse(data_at_idx[0])));
+					} else {
+						r_array.push(data_at_idx[1]);
+					}
+				}
+			}
+			return r_array;
+		}
+
+		function get_array_for_reg(data, key){
+			var xa = get_series(data, "x", key);
+			var ya = get_series(data, "y", key);
+			r_array = [];
+			for(var idx = 0; idx < xa.length; idx++){
+				r_array.push([xa[idx], NaN]);
+			}
+			for(var idx = 0; idx < ya.length; idx++){
+				r_array[idx][1] = ya[idx];
+			}
+			return r_array;
+		}
+
+		function get_plot_of_graph(num, equation, kind){
+			if(kind == "linear"){
+				var eq_func = function (x){
+					return equation[0] * x + equation[1];
+				}
+			} else if (kind == "logarithmic"){
+				var eq_func = function (x){
+					return equation[0] + equation[1] * Math.log(x);
+				}
+			}
+			r_array = [];
+			for(var idx = 1; idx <= num; idx++){
+				var x = (svg_width/num)*idx;
+				r_array.push([x, eq_func(x)]);
+			}
+			return r_array;
+		}
+		function draw_trend_line(num, reg, kind, eq_pos){
+			var line_data = get_plot_of_graph(num, reg["equation"], kind);
+			var svg_line = d3.svg.line()
+				.x(function(d, i){
+					return offset_x + d[0];
+				})
+				.y(function(d, i){
+					return svg_height - d[1]/y_ratio - offset_y;
+				})
+				.interpolate("basis")
+
+			d3.select("#my-graph")
+				.append("path")
+					.attr("class", "line")
+					.attr("d", svg_line(line_data))
+
+
+			d3.select("#my-graph")
+				.append("text")
+					.text(reg["string"])
+					.attr("class", "text-label")
+					.attr("x", eq_pos[0])
+					.attr("y", eq_pos[1])
+		}
+
+		function get_isp_of_two_linear(lreg_1, lreg_2){
+			var leq_1 = lreg_1["equation"];
+			var leq_2 = lreg_2["equation"];
+
+			var x = (leq_2[1] - leq_1[1])/(leq_1[0] - leq_2[0])
+			var y = leq_1[0] * x + leq_1[1];
+			return [x, y];
+		}
+
+		function get_isp(reg_1, reg_2, kind){
+			var eq_1 = reg_1["equation"];
+			var eq_2 = reg_2["equation"];
+
+			if(kind == "linear"){
+				var x = (eq_2[1] - eq_1[1])/(eq_1[0] - eq_2[0]);
+				var y = eq_1[0] * x + eq_1[1];
+			} else if ("logarithmic"){
+				var lnx = (eq_2[0] - eq_1[0])/(eq_1[1] - eq_2[1])
+				var x = Math.pow(Math.E, lnx);
+				var y = eq_1[0] + eq_1[1] * lnx;
+				console.log(y)
+			}
+			return [x, y]
+		}
+
+		var reg_kind = "linear";
+
+		var karr_reg = get_array_for_reg(data_set, "k");
+		var k_reg = regression(reg_kind, karr_reg);
+
+		var tarr_reg = get_array_for_reg(data_set, "t");
+		var t_reg = regression(reg_kind, tarr_reg);
+		// linear, logarithmic
+
+		draw_trend_line(20, k_reg, reg_kind, [210, 100]);
+		draw_trend_line(20, t_reg, reg_kind, [380, 150]);
+
+		var isp = get_isp(k_reg, t_reg, reg_kind);
+		var expect_date = rev_x_scale(isp[0]);
+		var expect_tweets = parseInt(isp[1]);
+		var remain_day = parseInt((expect_date.getTime() - (new Date()).getTime())/1000/60/60/24);
+
+		$("#expect-date").text(expect_date.toDateString());
+		$("#expect-tweets").text(expect_tweets);
+		$("#remain-day").text(remain_day+"일");
+	</script>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/js/materialize.min.js"></script>
+</body>
