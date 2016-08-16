@@ -13,7 +13,7 @@
 
 	<style>
 		svg {
-			width: 550px;
+			width: 100%;
 			height: 300px;
 			//border: 1px solid grey;
 		}
@@ -63,7 +63,9 @@
 		</div>
 
 		<div class="row center">
-			<svg id="my-graph" class="z-depth-1"></svg>
+			<div class="col l8 offset-l2 m8 offset-m2 s12">
+				<svg id="my-graph" class="z-depth-1"></svg>
+			</div>
 		</div>
 
 		<div class="row">
@@ -88,7 +90,7 @@
 	</div>
 
 	<script>
-		var svg_width = 500;
+		var svg_width = $("#my-graph").width();
 		var svg_height = 300;
 		var offset_x = 40;
 		var offset_y = 40;
@@ -99,7 +101,7 @@
 			["2014-03-29", 0, "k"], ["2016-07-17", 7895, "k"], ["2016-08-02", 8166, "k"], ["2016-08-07", 8251, "k"], ["2016-08-11", 8346, "k"], ["2016-08-15", 8421, "k"],
 			["2015-08-23", 0, "t"], ["2016-07-17", 5012, "t"], ["2016-08-02", 5514, "t"], ["2016-08-07", 5696, "t"], ["2016-08-11", 5921, "t"], ["2016-08-15", 6021, "t"],
 		];
-
+		
 		var format = d3.time.format("%Y-%m-%d"),
 			min_date = format.parse("2014-01-01"),
 			max_date = format.parse("2017-12-31");
@@ -272,8 +274,8 @@
 		var t_reg = regression(reg_kind, tarr_reg);
 		// linear, logarithmic
 
-		draw_trend_line(20, k_reg, reg_kind, [210, 100]);
-		draw_trend_line(20, t_reg, reg_kind, [380, 150]);
+		draw_trend_line(20, k_reg, reg_kind, [svg_width/3, 100]);
+		draw_trend_line(20, t_reg, reg_kind, [3*svg_width/5, 200]);
 
 		var isp = get_isp(k_reg, t_reg, reg_kind);
 		var expect_date = rev_x_scale(isp[0]);
