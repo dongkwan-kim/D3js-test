@@ -13,9 +13,8 @@
 
 	<style>
 		svg {
-			width: 550px;
+			width: 100%;
 			height: 300px;
-			//border: 1px solid grey;
 		}
 
 		.axis text {
@@ -52,6 +51,10 @@
 			margin-bottom: 10px;
 		}
 
+		#remove-btn {
+			margin-top: 13px;
+		}
+
 	</style>
 
 </head>
@@ -63,7 +66,10 @@
 		</div>
 
 		<div class="row center">
-			<svg id="my-graph" class="z-depth-1"></svg>
+			<div class="col l8 offset-l2 m8 offset-m2 s12">
+				<svg id="my-graph" class="z-depth-1"></svg>
+			</div>
+			<a id="remove-btn" class="waves-effect waves-light btn green">Remove Outlier</a>
 		</div>
 
 		<div class="row">
@@ -84,21 +90,18 @@
 					</tbody>
 				</table>
 			</div>
+
 		</div>
 	</div>
 
 	<script>
-		var svg_width = 500;
+		var svg_width = $("#my-graph").width()-50;
 		var svg_height = 300;
 		var offset_x = 40;
 		var offset_y = 40;
 		var y_ratio = 50;
 
-		
-		var data_set = [
-			["2014-03-29", 0, "k"], ["2016-07-17", 7895, "k"], ["2016-08-02", 8166, "k"], ["2016-08-07", 8251, "k"], ["2016-08-11", 8346, "k"], ["2016-08-15", 8421, "k"],
-			["2015-08-23", 0, "t"], ["2016-07-17", 5012, "t"], ["2016-08-02", 5514, "t"], ["2016-08-07", 5696, "t"], ["2016-08-11", 5921, "t"], ["2016-08-15", 6021, "t"],
-		];
+		var svg = d3.select("#my-graph");
 
 		var format = d3.time.format("%Y-%m-%d"),
 			min_date = format.parse("2014-01-01"),
@@ -117,56 +120,6 @@
 		var y_scale = d3.scale.linear()
 			.domain([0, svg_height*y_ratio])
 			.range([svg_height, 0])
-
-		d3.select("#my-graph")
-			.selectAll("circle")
-			.data(data_set)
-			.enter()
-			.append("circle")
-			.attr("class", function(d, i){
-				return d[2]+"-tweet"
-			})
-			.attr("cx", function(d, i){
-				return x_scale(format.parse(d[0])) + offset_x;
-			})
-			.attr("cy", function(d, i){
-				return (svg_height - d[1]/y_ratio) - offset_y;
-			})
-			.attr("r", 2)
-
-		d3.select("#my-graph")
-			.append("g")
-				.attr("class", "x axis")
-				.attr("transform", "translate(40, 260)")
-				.call(d3.svg.axis()
-					.scale(x_scale)
-					.orient("bottom")
-				)
-			.append("g")
-				.attr("class", "y axis")
-				.attr("transform", "translate(0, -300)")
-				.call(d3.svg.axis()
-					.scale(y_scale)
-					.orient("left")
-				)
-
-		d3.select("#my-graph")
-			.select(".x.axis")
-			.selectAll("text")
-			.attr("y", 0)
-			.attr("x", 9)
-			.attr("dy", ".35em")
-			.attr("transform", "rotate(40)")
-			.style("text-anchor", "start")
-
-		d3.select("#my-graph")
-			.select(".y.axis")
-			.selectAll("text")
-			.attr("y", 0)
-			.attr("x", -7)
-			.attr("transform", "rotate(0)")
-			.style("text-anchor", "end")
-
 
 		function get_series(data, axis, key){
 			r_array = [];
@@ -229,7 +182,6 @@
 					.attr("class", "line")
 					.attr("d", svg_line(line_data))
 
-
 			d3.select("#my-graph")
 				.append("text")
 					.text(reg["string"])
@@ -263,26 +215,138 @@
 			return [x, y]
 		}
 
-		var reg_kind = "linear";
+		function draw_infra(){
+			svg.append("g")
+					.attr("class", "x axis")
+					.attr("transform", "translate(40, 260)")
+					.call(d3.svg.axis()
+						.scale(x_scale)
+						.orient("bottom")
+					)
+				.append("g")
+					.attr("class", "y axis")
+					.attr("transform", "translate(0, -300)")
+					.call(d3.svg.axis()
+						.scale(y_scale)
+						.orient("left")
+					)
 
-		var karr_reg = get_array_for_reg(data_set, "k");
-		var k_reg = regression(reg_kind, karr_reg);
+			svg.select(".x.axis")
+				.selectAll("text")
+				.attr("y", 0)
+				.attr("x", 9)
+				.attr("dy", ".35em")
+				.attr("transform", "rotate(40)")
+				.style("text-anchor", "start")
 
-		var tarr_reg = get_array_for_reg(data_set, "t");
-		var t_reg = regression(reg_kind, tarr_reg);
-		// linear, logarithmic
+			svg.select(".y.axis")
+				.selectAll("text")
+				.attr("y", 0)
+				.attr("x", -7)
+				.attr("transform", "rotate(0)")
+				.style("text-anchor", "end")
+		}
 
-		draw_trend_line(20, k_reg, reg_kind, [210, 100]);
-		draw_trend_line(20, t_reg, reg_kind, [380, 150]);
+		function draw_scatter_plots(){
+			var data_set = [];
+			d3.csv("https://raw.githubusercontent.com/todoaskit/D3js-test/master/data.csv", function(error, data){
+				data.forEach(function(d, i){
+					data_set.push([d.date, parseInt(d.tweet), d.user]);
+				});
+				svg.selectAll("circle")
+					.data(data_set)
+					.enter()
+					.append("circle")
+					.attr("class", function(d, i){
+						return d[2]+"-tweet"
+					})
+					.attr("cx", function(d, i){
+						return x_scale(format.parse(d[0])) + offset_x;
+					})
+					.attr("cy", function(d, i){
+						return (svg_height - d[1]/y_ratio) - offset_y;
+					})
+					.attr("r", 2)
 
-		var isp = get_isp(k_reg, t_reg, reg_kind);
-		var expect_date = rev_x_scale(isp[0]);
-		var expect_tweets = parseInt(isp[1]);
-		var remain_day = parseInt((expect_date.getTime() - (new Date()).getTime())/1000/60/60/24);
+				var reg_kind = "linear";
+				var karr_reg = get_array_for_reg(data_set, "k");
+				var k_reg = regression(reg_kind, karr_reg);
+				var tarr_reg = get_array_for_reg(data_set, "t");
+				var t_reg = regression(reg_kind, tarr_reg);
+				// linear, logarithmic
 
-		$("#expect-date").text(expect_date.toDateString());
-		$("#expect-tweets").text(expect_tweets);
-		$("#remain-day").text(remain_day+"일");
+				draw_trend_line(20, k_reg, reg_kind, [svg_width/3, 100]);
+				draw_trend_line(20, t_reg, reg_kind, [3*svg_width/5, 200]);
+
+				var isp = get_isp(k_reg, t_reg, reg_kind);
+				var expect_date = rev_x_scale(isp[0]);
+				var expect_tweets = parseInt(isp[1]);
+				var remain_day = parseInt((expect_date.getTime() - (new Date()).getTime())/1000/60/60/24);
+
+				$("#expect-date").text(expect_date.toDateString());
+				$("#expect-tweets").text(expect_tweets);
+				$("#remain-day").text(remain_day+"일");
+			});
+		}
+
+		function draw_removed_outlier(){
+			var data_set = [];
+			d3.csv("https://raw.githubusercontent.com/todoaskit/D3js-test/master/data.csv", function(error, data){
+				data.forEach(function(d, i){
+					if (parseInt(d.tweet) > 0){
+						data_set.push([d.date, parseInt(d.tweet), d.user]);
+					}
+				});
+
+				svg.selectAll(".line")
+					.remove()
+
+				svg.selectAll(".text-label")
+					.remove()
+
+				svg.selectAll("circle")
+					.data(data_set)
+					.attr("class", function(d, i){
+						return d[2]+"-tweet"
+					})
+					.attr("cx", function(d, i){
+						return x_scale(format.parse(d[0])) + offset_x;
+					})
+					.attr("cy", function(d, i){
+						return (svg_height - d[1]/y_ratio) - offset_y;
+					})
+					.attr("r", 2)
+
+				var reg_kind = "linear";
+				var karr_reg = get_array_for_reg(data_set, "k");
+				var k_reg = regression(reg_kind, karr_reg);
+				var tarr_reg = get_array_for_reg(data_set, "t");
+				var t_reg = regression(reg_kind, tarr_reg);
+				// linear, logarithmic
+
+				draw_trend_line(20, k_reg, reg_kind, [svg_width/3, 100]);
+				draw_trend_line(20, t_reg, reg_kind, [3*svg_width/5, 200]);
+
+				var isp = get_isp(k_reg, t_reg, reg_kind);
+				var expect_date = rev_x_scale(isp[0]);
+				var expect_tweets = parseInt(isp[1]);
+				var remain_day = parseInt((expect_date.getTime() - (new Date()).getTime())/1000/60/60/24);
+
+				$("#expect-date").text(expect_date.toDateString());
+				$("#expect-tweets").text(expect_tweets);
+				$("#remain-day").text(remain_day+"일");
+			});
+		}
+
+		$(document).ready(function(){
+			draw_infra();
+			draw_scatter_plots();
+		});
+
+		$("#remove-btn").click(function(){
+			draw_removed_outlier();
+		});
+		
 	</script>
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/js/materialize.min.js"></script>
