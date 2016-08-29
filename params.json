@@ -1,6 +1,6 @@
 {
   "name": "D3js-test",
   "tagline": "",
-  "body": "### D3.js test\r\n- scatter plot graph\r\n- trend line with regression.js\r\n- Compare number of tweets of K.. and T..\r\n- Demo is [here](https://todoaskit.github.io/D3js-test/tweets.html)",
+  "body": "### D3.js test\r\n- Scatter plot graph\r\n- Trend line with regression.js\r\n\r\n### list\r\n - [Compare number of tweets of @K and @T](https://todoaskit.github.io/D3js-test/tweets.html)\r\n - [KIXLAB Coffee Plot](https://todoaskit.github.io/D3js-test/kixlab-coffee.html)\r\n",
   "note": "Don't delete this file! It's used internally to help with page regeneration."
 }
