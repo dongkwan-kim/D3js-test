@@ -11,6 +11,7 @@
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/css/materialize.min.css">
 	<script src="https://d3js.org/d3.v3.min.js"></script>
 	<script src="regression.js"></script>
+	<script src="stat.js"></script>
 
 	<style>
 		svg {
@@ -73,9 +74,19 @@
 			</div>
 		</div>
 
+		<div class="row">
+			<div class="col l8 offset-l2 m8 offset-m2 s12">
+				<blockquote>
+					<p><b class="brown-text">상관관계</b>가 <b class="brown-text">없습니다</b></p>
+					<p>Spearman correlation: <span id="correl"></span></p>
+				</blockquote>
+			</div>
+		</div>
+
 		<div class="row center">
 			<a href="https://github.com/todoaskit/D3js-test"><i class="svg-icon github"></i></a>
 		</div>
+
 	</div>
 
 	<script>
@@ -83,13 +94,13 @@
 		var svg_height = 300;
 		var offset_x = 40;
 		var offset_y = 40;
-		var y_ratio = 50;
+		var y_ratio = 0.1;
 
 		var svg = d3.select("#my-graph");
 
 		var format = d3.time.format("%Y-%m-%d"),
-			min_date = format.parse("2014-01-01"),
-			max_date = format.parse("2017-12-31");
+			min_date = format.parse("2016-07-20"),
+			max_date = format.parse("2016-09-01");
 
 		var x_scale = d3.time.scale()
 			.domain([min_date, max_date])
@@ -261,8 +272,25 @@
 			});
 		}
 
+		function put_correl(){
+			var data_set = [];
+			d3.csv("https://raw.githubusercontent.com/todoaskit/D3js-test/master/data-kixlab-coffee.csv", function(error, data){
+				data.forEach(function(d, i){
+					data_set.push([d.date, parseInt(d.tweet)]);
+				});
+				x_arr = [];
+				y_arr = [];
+				for(var idx = 0; idx < data_set.length; idx++){
+					x_arr.push(new Date(data_set[idx][0]));
+					y_arr.push(data_set[idx][1]);
+				}
+				$("#correl").text(sampleCorrelation(x_arr, y_arr));
+			});
+			
+		}
 
 		$(document).ready(function(){
+			put_correl()
 			draw_infra();
 			draw_scatter_plots();
 		});
