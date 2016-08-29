@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<title>KIXLAB Coffee Plot</title>
+	<link href="https://abs.twimg.com/favicons/favicon.ico" rel="shortcut icon" type="image/x-icon">
+	<script src="https://code.jquery.com/jquery.js"></script>
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/css/materialize.min.css">
+	<script src="https://d3js.org/d3.v3.min.js"></script>
+	<script src="regression.js"></script>
+	<script src="stat.js"></script>
+
+	<style>
+		svg {
+			width: 100%;
+			height: 300px;
+		}
+
+		.axis text {
+			font-size: 11px;
+		}
+
+		.text-label {
+			font-size: 11px;
+		}
+
+		.axis path,
+		.axis line {
+			fill: none;
+			stroke: black;
+		}
+
+		.c-tweet {
+			fill: rgb(89, 39, 39);
+		}
+
+		.line {
+			fill: none;
+			stroke: grey;
+		}
+
+		blockquote {
+			border-left: 5px solid #592727;
+		}
+
+		.centered {
+			margin-bottom: 10px;
+		}
+		
+		.svg-icon.github {
+			background-image: url(https://assets-cdn.github.com/favicon.ico);
+		}
+		.svg-icon {
+			width: 32px;
+			height: 32px;
+			display: inline-block;
+		}
+	</style>
+
+</head>
+
+<body>
+	<div class="container">
+		<div class="row center">
+			<h4>KIXLAB <span class="brown-text">Coffee</span> Plot</h4>
+		</div>
+
+		<div class="row center">
+			<div class="col l8 offset-l2 m8 offset-m2 s12">
+				<svg id="my-graph" class="z-depth-1"></svg>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col l8 offset-l2 m8 offset-m2 s12">
+				<blockquote>
+					<p><b class="brown-text">상관관계</b>가 <b class="brown-text">없습니다</b></p>
+					<p>Spearman correlation: <span id="correl"></span></p>
+				</blockquote>
+			</div>
+		</div>
+
+		<div class="row center">
+			<a href="https://github.com/todoaskit/D3js-test"><i class="svg-icon github"></i></a>
+		</div>
+
+	</div>
+
+	<script>
+		var svg_width = $("#my-graph").width()-50;
+		var svg_height = 300;
+		var offset_x = 40;
+		var offset_y = 40;
+		var y_ratio = 0.1;
+
+		var svg = d3.select("#my-graph");
+
+		var format = d3.time.format("%Y-%m-%d"),
+			min_date = format.parse("2016-07-20"),
+			max_date = format.parse("2016-09-01");
+
+		var x_scale = d3.time.scale()
+			.domain([min_date, max_date])
+			.range([0, svg_width]);
+
+		var rev_x_scale = function(x){
+			return new Date(d3.time.scale()
+						.domain([0, svg_width])
+						.range([min_date, max_date])(x));
+		};
+
+		var y_scale = d3.scale.linear()
+			.domain([0, svg_height*y_ratio])
+			.range([svg_height, 0])
+
+		function get_series(data, axis, key){
+			r_array = [];
+			for(var idx=0; idx<data.length; idx++){
+				var data_at_idx = data[idx];
+				if(data_at_idx[2] == key){
+					if(axis == "x"){
+						r_array.push(x_scale(format.parse(data_at_idx[0])));
+					} else {
+						r_array.push(data_at_idx[1]);
+					}
+				}
+			}
+			return r_array;
+		}
+
+		function get_array_for_reg(data, key){
+			var xa = get_series(data, "x", key);
+			var ya = get_series(data, "y", key);
+			r_array = [];
+			for(var idx = 0; idx < xa.length; idx++){
+				r_array.push([xa[idx], NaN]);
+			}
+			for(var idx = 0; idx < ya.length; idx++){
+				r_array[idx][1] = ya[idx];
+			}
+			return r_array;
+		}
+
+		function get_plot_of_graph(num, equation, kind){
+			if(kind == "linear"){
+				var eq_func = function (x){
+					return equation[0] * x + equation[1];
+				}
+			} else if (kind == "logarithmic"){
+				var eq_func = function (x){
+					return equation[0] + equation[1] * Math.log(x);
+				}
+			}
+			r_array = [];
+			for(var idx = 1; idx <= num; idx++){
+				var x = (svg_width/num)*idx;
+				r_array.push([x, eq_func(x)]);
+			}
+			return r_array;
+		}
+		function draw_trend_line(num, reg, kind, eq_pos){
+			var line_data = get_plot_of_graph(num, reg["equation"], kind);
+			var svg_line = d3.svg.line()
+				.x(function(d, i){
+					return offset_x + d[0];
+				})
+				.y(function(d, i){
+					return svg_height - d[1]/y_ratio - offset_y;
+				})
+				.interpolate("basis")
+
+			d3.select("#my-graph")
+				.append("path")
+					.attr("class", "line")
+					.attr("d", svg_line(line_data))
+
+			d3.select("#my-graph")
+				.append("text")
+					.text(reg["string"])
+					.attr("class", "text-label")
+					.attr("x", eq_pos[0])
+					.attr("y", eq_pos[1])
+		}
+
+		function get_isp_of_two_linear(lreg_1, lreg_2){
+			var leq_1 = lreg_1["equation"];
+			var leq_2 = lreg_2["equation"];
+
+			var x = (leq_2[1] - leq_1[1])/(leq_1[0] - leq_2[0])
+			var y = leq_1[0] * x + leq_1[1];
+			return [x, y];
+		}
+
+		function get_isp(reg_1, reg_2, kind){
+			var eq_1 = reg_1["equation"];
+			var eq_2 = reg_2["equation"];
+
+			if(kind == "linear"){
+				var x = (eq_2[1] - eq_1[1])/(eq_1[0] - eq_2[0]);
+				var y = eq_1[0] * x + eq_1[1];
+			} else if ("logarithmic"){
+				var lnx = (eq_2[0] - eq_1[0])/(eq_1[1] - eq_2[1])
+				var x = Math.pow(Math.E, lnx);
+				var y = eq_1[0] + eq_1[1] * lnx;
+				console.log(y)
+			}
+			return [x, y]
+		}
+
+		function draw_infra(){
+			svg.append("g")
+					.attr("class", "x axis")
+					.attr("transform", "translate(40, 260)")
+					.call(d3.svg.axis()
+						.scale(x_scale)
+						.orient("bottom")
+					)
+				.append("g")
+					.attr("class", "y axis")
+					.attr("transform", "translate(0, -300)")
+					.call(d3.svg.axis()
+						.scale(y_scale)
+						.orient("left")
+					)
+
+			svg.select(".x.axis")
+				.selectAll("text")
+				.attr("y", 0)
+				.attr("x", 9)
+				.attr("dy", ".35em")
+				.attr("transform", "rotate(40)")
+				.style("text-anchor", "start")
+
+			svg.select(".y.axis")
+				.selectAll("text")
+				.attr("y", 0)
+				.attr("x", -7)
+				.attr("transform", "rotate(0)")
+				.style("text-anchor", "end")
+		}
+
+		function draw_scatter_plots(){
+			var data_set = [];
+			d3.csv("https://raw.githubusercontent.com/todoaskit/D3js-test/master/data-kixlab-coffee.csv", function(error, data){
+				data.forEach(function(d, i){
+					data_set.push([d.date, parseInt(d.tweet), d.user]);
+				});
+				svg.selectAll("circle")
+					.data(data_set)
+					.enter()
+					.append("circle")
+					.attr("class", function(d, i){
+						return d[2]+"-tweet"
+					})
+					.attr("cx", function(d, i){
+						return x_scale(format.parse(d[0])) + offset_x;
+					})
+					.attr("cy", function(d, i){
+						return (svg_height - d[1]/y_ratio) - offset_y;
+					})
+					.attr("r", 2)
+
+				var reg_kind = "linear";
+				var carr_reg = get_array_for_reg(data_set, "c");
+				var c_reg = regression(reg_kind, carr_reg);
+				// linear, logarithmic
+
+				draw_trend_line(20, c_reg, reg_kind, [svg_width/3, 100]);
+			});
+		}
+
+		function put_correl(){
+			var data_set = [];
+			d3.csv("https://raw.githubusercontent.com/todoaskit/D3js-test/master/data-kixlab-coffee.csv", function(error, data){
+				data.forEach(function(d, i){
+					data_set.push([d.date, parseInt(d.tweet)]);
+				});
+				x_arr = [];
+				y_arr = [];
+				for(var idx = 0; idx < data_set.length; idx++){
+					x_arr.push(new Date(data_set[idx][0]));
+					y_arr.push(data_set[idx][1]);
+				}
+				$("#correl").text(sampleCorrelation(x_arr, y_arr));
+			});
+			
+		}
+
+		$(document).ready(function(){
+			put_correl()
+			draw_infra();
+			draw_scatter_plots();
+		});
+
+	</script>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.7/js/materialize.min.js"></script>
+</body>
