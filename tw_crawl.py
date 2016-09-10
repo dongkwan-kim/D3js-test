@@ -33,6 +33,20 @@ def update_csv(f_name, new_line):
     f.write(new_line+"\n")
     f.close()
 
+"""
+
+t_upate.sh >
+cd /home/(directory)
+python3 tw_crawl.py @K @T
+git add data.csv
+git commit -m "updata data $(date +%Y%m%d)"
+git push
+echo "----------------------------"
+
+crontab >
+59 23 * * * /home/(directory)/t_update.sh >> /home/(directory)/crontab.log 2>&1
+
+"""
 
 if __name__ == "__main__":
 
@@ -48,4 +62,4 @@ if __name__ == "__main__":
 
     update_csv("data.csv", k_line)
     update_csv("data.csv", t_line)
-    print("update successfully completed")
+    print("update successfully completed: " + str(tday))
