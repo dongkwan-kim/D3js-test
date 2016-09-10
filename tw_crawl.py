@@ -48,3 +48,4 @@ if __name__ == "__main__":
 
     update_csv("data.csv", k_line)
     update_csv("data.csv", t_line)
+    print("update successfully completed")
