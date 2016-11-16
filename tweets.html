@@ -78,6 +78,7 @@
 
 		<div class="row center">
 			<a id="remove-btn" class="waves-effect waves-light btn green">Remove Outlier</a>
+			<a id="recent-btn" class="waves-effect waves-light btn green">Recent 14 days</a>
 		</div>
 
 		<div class="row">
@@ -348,6 +349,60 @@
 			});
 		}
 
+		function draw_recent_14_days(){
+			var data_set = [];
+			d3.csv("https://raw.githubusercontent.com/todoaskit/D3js-test/master/data.csv", function(error, data){
+				var days = 14;
+				var date = new Date();
+				var before_14 = new Date(date.getTime() - (days * 24 * 60 * 60 * 1000))
+				data.forEach(function(d, i){
+					if(new Date(d.date) >= before_14){
+						data_set.push([d.date, parseInt(d.tweet), d.user]);
+					}
+				});
+
+				console.log(data_set);
+
+				svg.selectAll(".line")
+					.remove()
+
+				svg.selectAll(".text-label")
+					.remove()
+
+				svg.selectAll("circle")
+					.data(data_set)
+					.attr("class", function(d, i){
+						return d[2]+"-tweet"
+					})
+					.attr("cx", function(d, i){
+						return x_scale(format.parse(d[0])) + offset_x;
+					})
+					.attr("cy", function(d, i){
+						return (svg_height - d[1]/y_ratio) - offset_y;
+					})
+					.attr("r", 2)
+
+				var reg_kind = "linear";
+				var karr_reg = get_array_for_reg(data_set, "k");
+				var k_reg = regression(reg_kind, karr_reg);
+				var tarr_reg = get_array_for_reg(data_set, "t");
+				var t_reg = regression(reg_kind, tarr_reg);
+				// linear, logarithmic
+
+				draw_trend_line(20, k_reg, reg_kind, [svg_width/3, 100]);
+				draw_trend_line(20, t_reg, reg_kind, [3*svg_width/5, 200]);
+
+				var isp = get_isp(k_reg, t_reg, reg_kind);
+				var expect_date = rev_x_scale(isp[0]);
+				var expect_tweets = parseInt(isp[1]);
+				var remain_day = parseInt((expect_date.getTime() - (new Date()).getTime())/1000/60/60/24);
+
+				$("#expect-date").text(expect_date.toDateString());
+				$("#expect-tweets").text(expect_tweets);
+				$("#remain-day").text(remain_day+"일");
+			});
+		}
+
 		$(document).ready(function(){
 			draw_infra();
 			draw_scatter_plots();
@@ -355,6 +410,10 @@
 
 		$("#remove-btn").click(function(){
 			draw_removed_outlier();
+		});
+
+		$("#recent-btn").click(function(){
+			draw_recent_14_days();
 		});
 		
 	</script>
