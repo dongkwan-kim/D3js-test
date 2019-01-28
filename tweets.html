@@ -100,7 +100,7 @@
 			</div>
 		</div>
 		<div class="row center">
-			<a href="https://github.com/todoaskit/D3js-test"><i class="svg-icon github"></i></a>
+			<a href="https://github.com/dongkwan-kim/D3js-test"><i class="svg-icon github"></i></a>
 		</div>
 	</div>
 
@@ -259,7 +259,7 @@
 
 		function draw_scatter_plots(){
 			var data_set = [];
-			d3.csv("https://raw.githubusercontent.com/todoaskit/D3js-test/master/data.csv", function(error, data){
+			d3.csv("https://raw.githubusercontent.com/dongkwan-kim/D3js-test/master/data.csv", function(error, data){
 				data.forEach(function(d, i){
 					data_set.push([d.date, parseInt(d.tweet), d.user]);
 				});
@@ -301,7 +301,7 @@
 
 		function draw_removed_outlier(){
 			var data_set = [];
-			d3.csv("https://raw.githubusercontent.com/todoaskit/D3js-test/master/data.csv", function(error, data){
+			d3.csv("https://raw.githubusercontent.com/dongkwan-kim/D3js-test/master/data.csv", function(error, data){
 				data.forEach(function(d, i){
 					if (parseInt(d.tweet) > 0){
 						data_set.push([d.date, parseInt(d.tweet), d.user]);
